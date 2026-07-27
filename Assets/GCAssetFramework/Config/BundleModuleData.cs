@@ -1,6 +1,6 @@
 using Sirenix.OdinInspector;
 
-namespace GCAssetFramework
+namespace GC.AssetFramework
 {
     [System.Serializable]
     public class BundleModuleData

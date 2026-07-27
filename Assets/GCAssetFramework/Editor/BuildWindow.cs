@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEditor;
 using System;
 
-namespace GCAssetFramework
+namespace GC.AssetFramework
 {
     public class BuildWindow : OdinMenuEditorWindow
     {

@@ -3,7 +3,7 @@ using Sirenix.OdinInspector.Editor;
 using Unity.VisualScripting;
 using UnityEngine;
 
-namespace GCAssetFramework
+namespace GC.AssetFramework
 {
     public class BundleModuleConfig : OdinEditorWindow
     {   

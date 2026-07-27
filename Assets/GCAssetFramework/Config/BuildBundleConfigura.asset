@@ -23,3 +23,10 @@ MonoBehaviour:
     SignFolderPathArr:
     - abName: AbName
       bundlePath: Assets/Plugins
+  - bundleID: 0
+    moduleName: Fisher
+    isBuild: 0
+    LastClickButtonime: 0
+    RootFolderPathArr: []
+    PrefabPathArr: []
+    SignFolderPathArr: []

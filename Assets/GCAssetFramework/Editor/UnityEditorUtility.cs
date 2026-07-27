@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace GCAssetFramework
+namespace GC.AssetFramework
 {
     public class UnityEditorUtility
     {

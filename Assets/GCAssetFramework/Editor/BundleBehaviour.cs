@@ -3,7 +3,7 @@ using Sirenix.OdinInspector;
 using UnityEditor;
 using UnityEngine;
 
-namespace GCAssetFramework
+namespace GC.AssetFramework
 {
     public class BundleBehaviour
     {

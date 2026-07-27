@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace GCAssetFramework
+namespace GC.AssetFramework
 {
     public class BuildBundleWindow : BundleBehaviour
     {
@@ -76,7 +76,7 @@ namespace GCAssetFramework
             {
                 if (item.isBuild)
                 {
-                    // TODO: 打包
+                    BuildBundleCompiler.BuildAssetBundle(item);
                 }
             }
         }

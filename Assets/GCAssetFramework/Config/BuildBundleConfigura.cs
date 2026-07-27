@@ -4,7 +4,7 @@ using UnityEditor;
 #endif
 using UnityEngine;
 
-namespace GCAssetFramework
+namespace GC.AssetFramework
 {
     [CreateAssetMenu(fileName = "BuildBundleConfigura", menuName = "GC/AssetBuild/BuildBundleConfigura")]
     public class BuildBundleConfigura : ScriptableObject

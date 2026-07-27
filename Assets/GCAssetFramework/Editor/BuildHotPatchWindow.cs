@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace GCAssetFramework
+namespace GC.AssetFramework
 {
     public class BuildHotPatchWindow : BundleBehaviour
     {
@@ -93,11 +93,13 @@ namespace GCAssetFramework
         public override void BuildBundle()
         {
             base.BuildBundle();
+            string[] v = hotVersion.Split(".");
+            int version = int.Parse(v[0] ?? "0") * 100 + int.Parse(v[1] ?? "0") * 10 + int.Parse(v[2] ?? "0");
             foreach (var item in moduleDataList)
             {
                 if (item.isBuild)
                 {
-                    // TODO: 打包
+                    BuildBundleCompiler.BuildAssetBundle(item, BuildType.HotPatch, version, pathDes);
                 }
             }
         }
