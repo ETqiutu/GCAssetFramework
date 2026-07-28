@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
-using Unity.VisualScripting;
+using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
 
@@ -52,6 +52,8 @@ namespace GC.AssetFramework
         /// </summary> 
         /// <returns></returns>
         private static Dictionary<string, List<string>> AllPrefabs = new Dictionary<string, List<string>>();
+
+        public static string BundleDataConfigPath = "Assets/GCAssetFramework/Data";
 
         /// <summary>
         /// 执行打包逻辑
@@ -170,8 +172,9 @@ namespace GC.AssetFramework
         /// </summary>
         private static void BuildAllAssetBundle()
         {
-            ModifyAllFileBundleName();
             WriteAssetBundleConfig();
+            AssetDatabase.Refresh();
+            ModifyAllFileBundleName();
         }
 
         /// <summary>
@@ -207,8 +210,37 @@ namespace GC.AssetFramework
                     bundleInfo.Path = filePath;
                     bundleInfo.BundleName = item.Value;
                     bundleInfo.AssetName = Path.GetFileName(filePath);
-                    // bundleInfo.crc = 
+                    bundleInfo.crc = Crc32.GetCrc32(filePath);
+                    bundleInfo.BundleDependce = new List<string>();
+                    string[] depencies = AssetDatabase.GetDependencies(filePath);
+                    foreach (var depence in depencies)
+                    {
+                        if (!depence.Equals(filePath) && depence.EndsWith(".cs"))
+                        {
+                            string assetBundleName = "";
+                            if (AllBundleFileDic.TryGetValue(depence, out assetBundleName))
+                            {
+                                if (!bundleInfo.BundleDependce.Contains(assetBundleName))
+                                {
+                                    bundleInfo.BundleDependce.Add(assetBundleName);
+                                }
+                            }
+                        }
+                    }
+                    config.BundleInfoList.Add(bundleInfo);
                 }
+            }
+            string json = JsonConvert.SerializeObject(config, Formatting.Indented);
+            string bundleConfigPath = Application.dataPath + "/" + TargetData.ModuleName + "AssetBundleConfig.json"; 
+            StreamWriter writer = File.CreateText(bundleConfigPath);
+            writer.Write(json);
+            writer.Dispose();
+            writer.Close();
+
+            AssetImporter importer = AssetImporter.GetAtPath(bundleConfigPath.Replace(Application.dataPath, "Assets"));
+            if (importer != null)
+            {
+                importer.assetBundleName = TargetData.ModuleName + "assetbundleconfig";
             }
         }
 
@@ -242,6 +274,12 @@ namespace GC.AssetFramework
                         importer.assetBundleName = prefabs.Key;
                     }
                 }
+            }
+            string bundleConfigPath = Application.dataPath + "/" + TargetData.ModuleName + "AssetBundleConfig.json"; 
+            AssetImporter close = AssetImporter.GetAtPath(bundleConfigPath.Replace(Application.dataPath, "Assets"));
+            if (close != null)
+            {
+                close.assetBundleName = "";
             }
             AssetDatabase.RemoveUnusedAssetBundleNames();
         }
