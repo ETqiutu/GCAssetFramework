@@ -12,6 +12,7 @@ namespace GC.AssetFramework
             {
                 if (BuildConfigura.Instance.AssetsData[i].IsBuild)
                 {
+                    Debug.Log("构建开始！");
                     BuildBundleCompiler.BuildAssetBundle(BuildConfigura.Instance.AssetsData[i]);
                 }
             }

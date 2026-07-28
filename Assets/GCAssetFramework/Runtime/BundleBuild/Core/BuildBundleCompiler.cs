@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
@@ -77,6 +78,8 @@ namespace GC.AssetFramework
         private static void Initialize(ModuleData moduleData, BuildType buildType = BuildType.AssetBundle, int version = 0, string notice = "")
         {
             AllFilePath.Clear();
+            AllAssets.Clear();
+            AllPrefabs.Clear();
 
             TargetData = moduleData;
             BuildType = buildType;
@@ -113,10 +116,6 @@ namespace GC.AssetFramework
                             AllAssets[package_name].Add(filePath);
                         }
                     }
-                    else
-                    {
-                        Debug.LogError($"GC Asset Framework: There are redundant items: {filePath}");
-                    }
                 }
             }
         }
@@ -131,10 +130,9 @@ namespace GC.AssetFramework
             
             foreach (var package in TargetData.Packages)
             {
-                string[] guidArr = AssetDatabase.FindAssets("t:Prefab", package.Prefabs);
-                for (int i = 0; i < guidArr.Length; i ++)
+                
+                foreach (var filePath in package.Prefabs)
                 {
-                    string filePath = AssetDatabase.GUIDToAssetPath(guidArr[i]);
                     string package_name = GeneratePackageName(package.PackageName);
                     if (!AllFilePath.Contains(filePath))
                     {
@@ -148,32 +146,6 @@ namespace GC.AssetFramework
                             {
                                 AllFilePath.Add(dependpath);
                                 dependsList.Add(dependpath);
-                                if (dependpath.EndsWith(".prefab"))
-                                {
-                                    if (!AllPrefabs.ContainsKey(package_name))
-                                    {
-                                        AllPrefabs.Add(package_name, new List<string>{ dependpath });
-                                    }
-                                    else
-                                    {
-                                        AllPrefabs[package_name].Add(dependpath);
-                                    }
-                                }
-                                else
-                                {
-                                    if (!AllAssets.ContainsKey(package_name))
-                                    {
-                                        AllAssets.Add(package_name, new List<string>{ dependpath });
-                                    }
-                                    else
-                                    {
-                                        AllAssets[package_name].Add(dependpath);
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                Debug.LogError($"GC Asset Framework: There are redundant items in the packaged dependencies: {filePath}");
                             }
                         }
                         if (!AllPrefabs.ContainsKey(package_name))
@@ -199,6 +171,45 @@ namespace GC.AssetFramework
         private static void BuildAllAssetBundle()
         {
             ModifyAllFileBundleName();
+            WriteAssetBundleConfig();
+        }
+
+        /// <summary>
+        /// 生成AssetBundle 配置文件
+        /// </summary>
+        private static void WriteAssetBundleConfig()
+        {
+            BundleConfig config = new BundleConfig();
+            config.BundleInfoList = new List<BundleInfo>();
+            // 所有AssetBundle文件字典 路径 - BundleName
+            Dictionary<string, string> AllBundleFileDic = new Dictionary<string, string>();
+        
+            string[] allBundleArr = AssetDatabase.GetAllAssetBundleNames();
+
+            foreach (var item in allBundleArr)
+            {
+                string[] bundleFileArr = AssetDatabase.GetAssetPathsFromAssetBundle(item);
+                foreach (var filePath in bundleFileArr)
+                {
+                    if (!filePath.EndsWith(".cs"))
+                    {
+                        AllBundleFileDic.Add(filePath, item);
+                    }
+                }
+            }
+            // 计算AssetBundle数据，生成AssetBundle配置文件
+            foreach (var item in AllBundleFileDic)
+            {
+                string filePath = item.Key;
+                if (!filePath.EndsWith(".cs"))
+                {
+                    BundleInfo bundleInfo = new BundleInfo();
+                    bundleInfo.Path = filePath;
+                    bundleInfo.BundleName = item.Value;
+                    bundleInfo.AssetName = Path.GetFileName(filePath);
+                    // bundleInfo.crc = 
+                }
+            }
         }
 
         /// <summary>
@@ -242,9 +253,11 @@ namespace GC.AssetFramework
         /// <returns></returns>
         private static bool IsRequired(string Path)
         {
+            if (Path.EndsWith(".cs")) return true;
+            
             foreach (var filePath in AllFilePath)
             {
-                if (string.Equals(filePath, Path) || filePath.Contains(Path) || Path.EndsWith(".cs"))
+                if (string.Equals(filePath, Path))
                 {
                     return true;
                 }

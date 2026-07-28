@@ -13,13 +13,14 @@ MonoBehaviour:
   m_Name: BuildConfigura
   m_EditorClassIdentifier: Assembly-CSharp::GC.AssetFramework.BuildConfigura
   AssetsData:
-  - ModuleName: Game
+  - ModuleName: Q
     IsBuild: 1
     Packages:
-    - ModuleName: Game
-      PackageName: Art
+    - ModuleName: Q
+      PackageName: Character
       AssetsPath:
       - Assets/Art/Attack2.png
       - Assets/Art/Attack1.png
       - Assets/Art/Name.png
-      Prefabs: []
+      Prefabs:
+      - Assets/Prefab/Player.prefab
