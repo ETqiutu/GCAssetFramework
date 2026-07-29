@@ -53,7 +53,10 @@ namespace GC.AssetFramework
         /// <returns></returns>
         private static Dictionary<string, List<string>> AllPrefabs = new Dictionary<string, List<string>>();
 
-        public static string BundleDataConfigPath = "Assets/GCAssetFramework/Data";
+        /// <summary>
+        /// AssetBundle 打包文件输出路径
+        /// </summary>
+        public static string BundleOutputPath { get { return Application.dataPath + "/../AssetBundle/" + TargetData.ModuleName + "/" + EditorUserBuildSettings.activeBuildTarget.ToString() + "/"; } }
 
         /// <summary>
         /// 执行打包逻辑
@@ -87,6 +90,8 @@ namespace GC.AssetFramework
             BuildType = buildType;
             Version = version;
             UpdateNotice = notice;
+            FileHelper.DeletFolder(BundleOutputPath);
+            Directory.CreateDirectory(BundleOutputPath);
         }
 
         /// <summary>
@@ -172,9 +177,22 @@ namespace GC.AssetFramework
         /// </summary>
         private static void BuildAllAssetBundle()
         {
+            ModifyAllFileBundleName();
             WriteAssetBundleConfig();
             AssetDatabase.Refresh();
-            ModifyAllFileBundleName();
+            AssetBundleManifest manifest = BuildPipeline.BuildAssetBundles(BundleOutputPath, BuildAssetBundleOptions.ChunkBasedCompression, EditorUserBuildSettings.activeBuildTarget);
+            if (manifest == null)
+            {
+                EditorUtility.DisplayDialog("Build Asset Bundle", "Build failed!", "Confirm");
+                Debug.LogError("GC Asset Framework: AssetBundle Build failed!");
+            }
+            else
+            {
+                Debug.Log("GC Asset Framework: Build Scccess!");
+                DeleteAllBundleManifestFile();
+                EncryptAllBundle();
+            }
+            ModifyAllFileBundleName(true);
         }
 
         /// <summary>
@@ -247,7 +265,7 @@ namespace GC.AssetFramework
         /// <summary>
         /// 进行打包名称
         /// </summary>
-        private static void ModifyAllFileBundleName()
+        private static void ModifyAllFileBundleName(bool clear = false)
         {
             int part = 0;
             foreach (var assets in AllAssets)
@@ -275,13 +293,17 @@ namespace GC.AssetFramework
                     }
                 }
             }
-            string bundleConfigPath = Application.dataPath + "/" + TargetData.ModuleName + "AssetBundleConfig.json"; 
-            AssetImporter close = AssetImporter.GetAtPath(bundleConfigPath.Replace(Application.dataPath, "Assets"));
-            if (close != null)
+            
+            if (clear)
             {
-                close.assetBundleName = "";
+                AssetDatabase.RemoveUnusedAssetBundleNames();
+                string bundleConfigPath = Application.dataPath + "/" + TargetData.ModuleName + "AssetBundleConfig.json"; 
+                AssetImporter close = AssetImporter.GetAtPath(bundleConfigPath.Replace(Application.dataPath, "Assets"));
+                if (close != null)
+                {
+                    close.assetBundleName = "";
+                }
             }
-            AssetDatabase.RemoveUnusedAssetBundleNames();
         }
 
         /// <summary>
@@ -311,6 +333,35 @@ namespace GC.AssetFramework
         private static string GeneratePackageName(string PackageName)
         {
             return TargetData.ModuleName + "_" + PackageName;
+        }
+
+        /// <summary>
+        /// 删除所有由AssetBundle生成的清单文件
+        /// </summary>
+        private static void DeleteAllBundleManifestFile()
+        {
+            string[] fileArr = Directory.GetFiles(BundleOutputPath);
+            foreach (var file in fileArr)
+            {
+                if (file.EndsWith(".manifest"))
+                {
+                    File.Delete(file);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 加密所有的AssetBundle
+        /// </summary>
+        private static void EncryptAllBundle()
+        {
+            DirectoryInfo directoryInfo = new DirectoryInfo(BundleOutputPath);
+            FileInfo[] fileInfoArr = directoryInfo.GetFiles("*", SearchOption.AllDirectories);
+            for (int  i = 0; i < fileInfoArr.Length; i ++)
+            {
+                AES.AESFileEncrypt(fileInfoArr[i].FullName, "gamecrafter");
+            }
+            Debug.Log("GC Asset Framework: AssetBundle Encrypt Finsish!");
         }
     }
 }
