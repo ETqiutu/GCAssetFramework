@@ -1,10 +1,8 @@
 using System.Collections.Generic;
 using System.IO;
-using Mono.Cecil;
 using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Rendering.VirtualTexturing;
 
 namespace GC.AssetFramework
 {
@@ -194,7 +192,7 @@ namespace GC.AssetFramework
             ModifyAllFileBundleName();
             WriteAssetBundleConfig();
             AssetDatabase.Refresh();
-            AssetBundleManifest manifest = BuildPipeline.BuildAssetBundles(BundleOutputPath, BuildAssetBundleOptions.ChunkBasedCompression, EditorUserBuildSettings.activeBuildTarget);
+            AssetBundleManifest manifest = BuildPipeline.BuildAssetBundles(BundleOutputPath, Converter.TransOption(BundleSettings.Instance.BuildOptions), Converter.TransPlatform(BundleSettings.Instance.BuildTarget));
             if (manifest == null)
             {
                 EditorUtility.DisplayDialog("Build Asset Bundle", "Build failed!", "Confirm");
@@ -373,11 +371,12 @@ namespace GC.AssetFramework
         /// </summary>
         private static void EncryptAllBundle()
         {
+            if (!BundleSettings.Instance.BundleEncrypt.IsEncrypt) return;
             DirectoryInfo directoryInfo = new DirectoryInfo(BundleOutputPath);
             FileInfo[] fileInfoArr = directoryInfo.GetFiles("*", SearchOption.AllDirectories);
             for (int  i = 0; i < fileInfoArr.Length; i ++)
             {
-                AES.AESFileEncrypt(fileInfoArr[i].FullName, "gamecrafter");
+                AES.AESFileEncrypt(fileInfoArr[i].FullName, BundleSettings.Instance.BundleEncrypt.EncryptKey);
             }
             Debug.Log("GC Asset Framework: AssetBundle Encrypt Finsish!");
         }
@@ -440,7 +439,7 @@ namespace GC.AssetFramework
         {
             HotAssetManifest hotAssetManifest = new HotAssetManifest();
             hotAssetManifest.UpdateNotice = UpdateNotice;
-            hotAssetManifest.DownloadURL = "https://127.0.0.1";
+            hotAssetManifest.DownloadURL = BundleSettings.Instance.AssetBunleDownLoadURL + "/HotAssets/" + TargetData.ModuleName + "/" + Version + "/" + BundleSettings.Instance.BuildTarget;
 
             HotAssetPatch hotAssetPatch = new HotAssetPatch();
             hotAssetPatch.PatchVersion = Version;

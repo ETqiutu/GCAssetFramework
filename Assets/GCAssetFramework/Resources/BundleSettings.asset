@@ -12,3 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91487da92f00e964b99fc31c0c5f1cb6, type: 3}
   m_Name: BundleSettings
   m_EditorClassIdentifier: Assembly-CSharp::GC.AssetFramework.BundleSettings
+  AssetBunleDownLoadURL: https://127.0.0.1
+  BundleEncrypt:
+    IsEncrypt: 1
+    EncryptKey: gamecrafter
+  BuildTarget: 3
+  BuildOptions: 9

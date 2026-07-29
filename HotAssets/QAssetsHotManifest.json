@@ -1,9 +1,9 @@
 {
-  "UpdateNotice": "",
-  "DownloadURL": "https://127.0.0.1",
+  "UpdateNotice": "This is a notice.",
+  "DownloadURL": "https://127.0.0.1/HotAssets/Q/1/Android",
   "HotAssetsPatchList": [
     {
-      "PatchVersion": 0,
+      "PatchVersion": 1,
       "HotAssetList": [
         {
           "ABName": "Android",
