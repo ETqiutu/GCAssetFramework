@@ -22,5 +22,28 @@ namespace GC.AssetFramework
                 Directory.Delete(folderPath);
             }
         }
+
+        /// <summary>
+        /// 写入文件
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <param name="data"></param>
+        public static void WriteFile(string filePath, byte[] data)
+        {
+            string directory = Path.GetDirectoryName(filePath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
+            
+            using (FileStream stream = File.Create(filePath))
+            {
+                stream.Write(data, 0, data.Length);
+            }
+        }
     }
 }

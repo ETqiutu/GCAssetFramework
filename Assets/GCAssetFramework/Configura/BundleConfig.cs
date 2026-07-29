@@ -47,4 +47,15 @@ namespace GC.AssetFramework
         /// </summary>
         public List<string> BundleDependce;
     }
+
+    /// <summary>
+    /// 内嵌的AssetBundle的信息
+    /// </summary> 
+    [System.Serializable]
+    public class BuildInSideBundleInfo
+    {
+        public string FileName; // 文件名称
+        public string MD5;      // 校验本地文件与包内文件一致
+        public float Size;      // 文件大小
+    }
 }

@@ -1,0 +1,31 @@
+{
+  "UpdateNotice": "",
+  "DownloadURL": "https://127.0.0.1",
+  "HotAssetsPatchList": [
+    {
+      "PatchVersion": 0,
+      "HotAssetList": [
+        {
+          "ABName": "Android",
+          "MD5": "6E95230747A045D07DB67B4B833D41DA",
+          "Size": 1.68164063
+        },
+        {
+          "ABName": "qassetbundleconfig",
+          "MD5": "9ED19BDF794A5F946373405902758E3B",
+          "Size": 1.86914063
+        },
+        {
+          "ABName": "q_character",
+          "MD5": "09CE742259249CCD327FA30CA36103CB",
+          "Size": 57.8847656
+        },
+        {
+          "ABName": "unifiedraytracing",
+          "MD5": "BA016AA149AAD8977896DCD49097652C",
+          "Size": 198.650391
+        }
+      ]
+    }
+  ]
+}

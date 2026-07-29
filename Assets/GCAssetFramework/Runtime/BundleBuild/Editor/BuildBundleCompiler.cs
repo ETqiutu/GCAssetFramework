@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using System.IO;
+using Mono.Cecil;
 using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering.VirtualTexturing;
 
 namespace GC.AssetFramework
 {
@@ -57,6 +59,18 @@ namespace GC.AssetFramework
         /// AssetBundle 打包文件输出路径
         /// </summary>
         public static string BundleOutputPath { get { return Application.dataPath + "/../AssetBundle/" + TargetData.ModuleName + "/" + EditorUserBuildSettings.activeBuildTarget.ToString() + "/"; } }
+
+        /// <summary>
+        /// 热更资源 打包输出路径
+        /// </summary>
+        /// <returns></returns>
+        public static string HotAssetOutputPath { get { return Application.dataPath + "/../HotAssets/" + TargetData.ModuleName + "/" + Version + "/" + EditorUserBuildSettings.activeBuildTarget.ToString() + "/"; } }
+
+        /// <summary>
+        /// 框架路径
+        /// </summary>
+        /// <value></value>
+        private static string ResourcePath { get { return Application.dataPath + "/Resources/"; } }
 
         /// <summary>
         /// 执行打包逻辑
@@ -191,6 +205,10 @@ namespace GC.AssetFramework
                 Debug.Log("GC Asset Framework: Build Scccess!");
                 DeleteAllBundleManifestFile();
                 EncryptAllBundle();
+                if (BuildType == BuildType.HotPatch)
+                {
+                    GeneratorHotAssets();
+                }
             }
             ModifyAllFileBundleName(true);
         }
@@ -362,6 +380,87 @@ namespace GC.AssetFramework
                 AES.AESFileEncrypt(fileInfoArr[i].FullName, "gamecrafter");
             }
             Debug.Log("GC Asset Framework: AssetBundle Encrypt Finsish!");
+        }
+
+        /// <summary>
+        /// 拷贝文件内嵌资源
+        /// </summary>
+        /// <param name="moduleData"></param>
+        /// <param name="showTips"></param>
+        public static void CopyBundleToStreamingAssets(ModuleData moduleData, bool showTips = true)
+        {
+            DirectoryInfo directoryInfo = new DirectoryInfo(Application.dataPath + "/../AssetBundle/" + moduleData.ModuleName + "/" + EditorUserBuildSettings.activeBuildTarget.ToString() + "/");
+            FileInfo[] fileInfoArr = directoryInfo.GetFiles("*", SearchOption.AllDirectories);
+            string streamingAssetPath = Application.streamingAssetsPath + "/AssetBundle/" + moduleData.ModuleName + "/";
+            FileHelper.DeletFolder(streamingAssetPath);
+            Directory.CreateDirectory(streamingAssetPath);
+            List<BuildInSideBundleInfo> bundleInfoList = new List<BuildInSideBundleInfo>();
+            for (int i = 0; i < fileInfoArr.Length; i ++)
+            {
+                File.Copy(fileInfoArr[i].FullName, streamingAssetPath + fileInfoArr[i].Name);
+                BuildInSideBundleInfo info = new BuildInSideBundleInfo();
+                info.FileName = fileInfoArr[i].Name;
+                info.MD5 = MD5.GetMd5FromFile(fileInfoArr[i].FullName);
+                info.Size = fileInfoArr[i].Length / 1024;
+                bundleInfoList.Add(info);
+            }
+            string json = JsonConvert.SerializeObject(bundleInfoList, Formatting.Indented);
+            FileHelper.WriteFile(ResourcePath + "asset_build_info.json", System.Text.Encoding.UTF8.GetBytes(json));
+            AssetDatabase.Refresh();
+
+            if (showTips)
+            {
+                EditorUtility.DisplayDialog("内嵌资源", $"内嵌资源完成 Path: {streamingAssetPath}", "确认");
+            }
+            Debug.Log("GC Asset Framework: Assets copy to streaming assets fisih!");
+        }
+
+        /// <summary>
+        /// 生成热更资源文件生成
+        /// </summary>
+        public static void GeneratorHotAssets()
+        {
+            FileHelper.DeletFolder(HotAssetOutputPath);
+            Directory.CreateDirectory(HotAssetOutputPath);
+            string[] bundlePathArr = Directory.GetFiles(BundleOutputPath);
+            for (int i = 0; i <  bundlePathArr.Length; i ++)
+            {
+                string path = bundlePathArr[i];
+                string dispath = HotAssetOutputPath + Path.GetFileName(path);
+                File.Copy(path, dispath);
+            }
+            Debug.Log("GC Asset Framework: Hot Pack generate successfully!");
+            GenerateHotAssetsManifest();
+        }
+
+        /// <summary>
+        /// 生成热更资源配置清单
+        /// </summary>
+        public static void GenerateHotAssetsManifest()
+        {
+            HotAssetManifest hotAssetManifest = new HotAssetManifest();
+            hotAssetManifest.UpdateNotice = UpdateNotice;
+            hotAssetManifest.DownloadURL = "https://127.0.0.1";
+
+            HotAssetPatch hotAssetPatch = new HotAssetPatch();
+            hotAssetPatch.PatchVersion = Version;
+
+            // 计算热更补丁
+            DirectoryInfo directoryInfo = new DirectoryInfo(HotAssetOutputPath);
+            FileInfo[] fileInfoArr = directoryInfo.GetFiles();
+            foreach (var fileInfo in fileInfoArr)
+            {
+                HotFileInfo info = new HotFileInfo();
+                info.ABName = fileInfo.Name;
+                info.MD5 = MD5.GetMd5FromFile(fileInfo.FullName);
+                info.Size = fileInfo.Length / 1024f;
+                hotAssetPatch.HotAssetList.Add(info);
+            }
+            hotAssetManifest.HotAssetsPatchList.Add(hotAssetPatch);
+            // 转换Json
+            string json = JsonConvert.SerializeObject(hotAssetManifest, Formatting.Indented);
+            FileHelper.WriteFile(Application.dataPath + "/../HotAssets/" + TargetData.ModuleName + "AssetsHotManifest.json", System.Text.Encoding.UTF8.GetBytes(json));
+            Debug.Log("GC Asset Framework: Hot Pack Manifest generate successfully!");
         }
     }
 }
