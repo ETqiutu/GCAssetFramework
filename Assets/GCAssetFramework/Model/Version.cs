@@ -3,6 +3,7 @@ namespace GC.AssetsFramework
     /// <summary>
     /// 版本封装
     /// </summary>
+    [System.Serializable]
     public class Version
     {
         /// <summary>
@@ -11,7 +12,7 @@ namespace GC.AssetsFramework
         public int Major;
 
         /// <summary>
-        /// 此版本：新功能上线
+        /// 次版本：新功能上线
         /// </summary>
         public int Minor;
 

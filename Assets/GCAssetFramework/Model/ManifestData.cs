@@ -3,26 +3,22 @@ using System.Collections.Generic;
 namespace GC.AssetsFramework
 {
     [System.Serializable]
-    public class ManifestData
+    public class BundleConfig
     {
-        public string Version;
-        public string UpdateNotice;
-        public List<ModuleManifestData> Modules;
+        public List<BundleInfo> BundleInfoList;
     }
 
     [System.Serializable]
-    public class ModuleManifestData
+    public class BundleInfo
     {
-        public string ModuleName;
-        public List<BundleManifestData> Bundles;
-    }
+        public string Path;
+        
+        public uint CRC;
 
-    [System.Serializable]
-    public class BundleManifestData
-    {
-        public string ModuleName;
-        public long BundleSize;
-        public List<string> FilePath;
+        public string BundleName;
+
+        public string AssetName;
+
         public List<string> Dependencies;
     }
 }
