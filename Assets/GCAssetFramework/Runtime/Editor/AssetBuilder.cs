@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
@@ -9,13 +10,14 @@ namespace GC.AssetsFramework
 {
     public static class AssetBuilder
     {
-        public static BuildSetting BuildSetting = AssetDatabase.LoadAssetAtPath<BuildSetting>("Assets/GCAssetFramework/Data/BuildSetting.asset");
+        public static BuildSetting BuildSetting;
         public static string Output = "";
+        public static string ResourcesPath = Application.dataPath + "/Resources/";
         public static string ModuleName;
         private static List<string> AllFiles = new List<string>();
         private static Dictionary<string, List<string>> BundlePaths = new Dictionary<string, List<string>>();
 
-        public static void Initialize(ModuleData moduleData)
+        public static void Initialize(ModuleData moduleData, BuildSetting buildSetting)
         {
             if (moduleData != null && 
                 string.IsNullOrEmpty(moduleData.ModuleName) && 
@@ -23,10 +25,16 @@ namespace GC.AssetsFramework
                 moduleData.BundleList != null && 
                 moduleData.BundleList.Length <= 0)
                 return;
+            BuildSetting = buildSetting;
+            ModuleName = moduleData.ModuleName;
             string platformName = BuildSetting.BuildPlatform.ToString().ToLower();
             Output = Application.dataPath + "/../AssetBundle/" + platformName + "/" + ModuleName + "/" + moduleData.Version.ToString() + "/";
-            FileHelper.DeletePath(Output);
-            ModuleName = moduleData.ModuleName;
+            if (!Directory.Exists(Output))
+            {
+                FileHelper.DeletePath(Output);
+                Directory.CreateDirectory(Output);
+            }
+            
             foreach (var bundle in moduleData.BundleList)
             {
                 if (BundlePaths.ContainsKey(moduleData.ModuleName + "_" + bundle.BundleName))
@@ -63,6 +71,8 @@ namespace GC.AssetsFramework
             else
             {
                 Debug.Log("[GC Asset Framework]: Packaging successfully.");
+                DeleteManifest();
+                EncryptAllBundle();
             }
             ModifyAllFileBundleName(true);
         }
@@ -71,7 +81,7 @@ namespace GC.AssetsFramework
         /// Modify all file asset bundle name
         /// </summary>
         /// <param name="Clear"></param>
-        public static void ModifyAllFileBundleName(bool Clear = false)
+        private static void ModifyAllFileBundleName(bool Clear = false)
         {
             int i = 0;
             foreach (var item in BundlePaths)
@@ -101,7 +111,7 @@ namespace GC.AssetsFramework
         /// <summary>
         /// Build manifest;
         /// </summary> 
-        public static void WriteAssetBundleConfig()
+        private static void WriteAssetBundleConfig()
         {
             BundleConfig config = new BundleConfig();
             config.BundleInfoList = new List<BundleInfo>();
@@ -172,12 +182,74 @@ namespace GC.AssetsFramework
         {
             foreach (var item in AllFiles)
             {
-                if (string.Equals(item, path) || item.Contains(path) || path.EndsWith(".cs"))
+                if (string.Equals(item, path) || path.EndsWith(".cs"))
                 {
-                    return true;
+                    return false;
                 }
             }
-            return false;
+            return true;
+        }
+
+        /// <summary>
+        /// Delete all manifest files
+        /// </summary> 
+        private static void DeleteManifest()
+        {
+            string[] files = Directory.GetFiles(Output);
+            foreach (var file in files)
+            {
+                if (file.EndsWith(".manifest"))
+                {
+                    File.Delete(file);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Encrypt AssetBundle packages
+        /// </summary>
+        private static void EncryptAllBundle()
+        {
+            DirectoryInfo directoryInfo = new DirectoryInfo(Output);
+            FileInfo[] fileInfoArr = directoryInfo.GetFiles("*", SearchOption.AllDirectories);
+            for (int i = 0; i < fileInfoArr.Length; i ++)
+            {
+                AES.AESEncrypt(fileInfoArr[i].FullName, BuildSetting.EncrypKey);
+            }
+            Debug.Log("[GC Asset Framework] Encryption successful.");
+        }
+
+        
+        public static void CopyBundleToStreamingAssets(ModuleData moduleData, bool showTips = true)
+        {
+            DirectoryInfo directoryInfo = new DirectoryInfo(Output);
+            FileInfo[] fileInfoArr = directoryInfo.GetFiles("*", SearchOption.AllDirectories);
+            string streamingAssetsPath = Application.streamingAssetsPath + "/AssetBundle/" + moduleData.ModuleName + "/";
+            FileHelper.DeletePath(streamingAssetsPath);
+
+            List<BuildBundleInfo> buildBundleInfos = new List<BuildBundleInfo>();
+            Directory.CreateDirectory(streamingAssetsPath);
+            for (int i = 0; i < fileInfoArr.Length; i++)
+            {
+                File.Copy(fileInfoArr[i].FullName, streamingAssetsPath + fileInfoArr[i].Name);
+                BuildBundleInfo buildBundleInfo = new BuildBundleInfo();
+                buildBundleInfo.FileName = fileInfoArr[i].Name;
+                buildBundleInfo.MD5 = MD5.GetMd5FromFile(fileInfoArr[i].FullName);
+                buildBundleInfo.Size = fileInfoArr[i].Length / 1024;
+                buildBundleInfos.Add(buildBundleInfo);
+            }
+
+            string json = JsonConvert.SerializeObject(buildBundleInfos);
+            FileHelper.Write(ResourcesPath + ModuleName + "Info.json", Encoding.UTF8.GetBytes(json));
+            AssetDatabase.Refresh();
+            if (showTips)
+            {
+                EditorUtility.DisplayDialog(
+                    "Inline operation", 
+                    $"Embedded resources completed : {ResourcesPath + ModuleName + "Info.json"}", 
+                    "Confirm");
+            }
+            Debug.Log("[GC Asset Framework]: Successfully copied assets to the StreamingAssets directory.");
         }
     }
 }

@@ -21,4 +21,12 @@ namespace GC.AssetsFramework
 
         public List<string> Dependencies;
     }
+
+    [System.Serializable]
+    public class BuildBundleInfo
+    {
+        public string FileName;
+        public string MD5;
+        public float Size;
+    }
 }

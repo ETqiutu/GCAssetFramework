@@ -6,11 +6,13 @@ namespace GC.AssetsFramework
     {
         public static void Write(string path, byte[] data)
         {
-            string directory = Path.GetDirectoryName(path);
-            if (!Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
-            File.Create(path);
-            File.WriteAllBytes(path, data);
+            if (File.Exists(path)) File.Delete(path);
+            if (!Directory.Exists(Path.GetDirectoryName(path)))
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+            FileStream stream = File.Create(path);
+            stream.Write(data, 0, data.Length);
+            stream.Dispose();
+            stream.Close();
         }
 
         public static void DeletePath(string path)

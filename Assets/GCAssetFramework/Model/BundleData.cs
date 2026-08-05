@@ -5,6 +5,7 @@ namespace GC.AssetsFramework
     {
         public string BundleName;
 
+        [Sirenix.OdinInspector.FilePath]
         public string[] AssetsPath;
     }
 }
