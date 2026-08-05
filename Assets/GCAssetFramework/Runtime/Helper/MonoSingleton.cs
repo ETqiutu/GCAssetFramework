@@ -11,7 +11,7 @@ namespace GC.AssetsFramework
             {
                 if (mInstance == null)
                 {
-                    mInstance = Object.FindObjectOfType<T>();
+                    mInstance = Object.FindAnyObjectByType<T>();
                     if (mInstance == null)
                     {
                         var obj = new GameObject(typeof(T).Name);
